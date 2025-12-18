@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { Menu, MessageSquare, Info } from 'lucide-react';
+import { Menu, MessageSquare, Info, X } from 'lucide-react';
 import CannedMessages from './CannedMessages';
 import CustomerInfoModal from './CustomerInfoModal';
 
-const TicketDetail = ({ ticket, onSendReply, onResolve, agentName, onShowMetadata }) => {
+const TicketDetail = ({ ticket, onSendReply, onResolve, agentName, onShowMetadata, onClose }) => {
     const [replyText, setReplyText] = useState('');
     const [showCannedMessages, setShowCannedMessages] = useState(false);
     const [showCustomerInfo, setShowCustomerInfo] = useState(false);
@@ -60,9 +60,18 @@ const TicketDetail = ({ ticket, onSendReply, onResolve, agentName, onShowMetadat
                             <Info className="w-5 h-5 text-[#4FCDFF] group-hover:text-[#3bb8e6]" />
                         </button>
                     </div>
-                    <button onClick={onShowMetadata} className="lg:hidden p-2 hover:bg-gray-100 rounded-lg">
-                        <Menu className="w-5 h-5 text-gray-600" />
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <button onClick={onShowMetadata} className="lg:hidden p-2 hover:bg-gray-100 rounded-lg">
+                            <Menu className="w-5 h-5 text-gray-600" />
+                        </button>
+                        <button
+                            onClick={onClose}
+                            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                            title="Close ticket"
+                        >
+                            <X className="w-5 h-5 text-gray-600" />
+                        </button>
+                    </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
           <span className={`px-3 py-1 rounded-lg text-sm font-medium ${getUrgencyColor(ticket.urgency)}`}>
