@@ -169,6 +169,64 @@ const Dashboard = ({ agentName, onLogout }) => {
         }
     };
 
+    const handleAssign = async (messageId, agentName) => {
+        try {
+            const result = await api.assignTicket(messageId, agentName);
+            if (result.success) {
+                // Update local state
+                const updatedTickets = tickets.map((t) => {
+                    if (t.id === messageId) {
+                        return {
+                            ...t,
+                            assigned_to: result.assigned_to,
+                            assigned_at: result.assigned_at
+                        };
+                    }
+                    return t;
+                });
+                setTickets(updatedTickets);
+
+                if (selectedTicket?.id === messageId) {
+                    setSelectedTicket({
+                        ...selectedTicket,
+                        assigned_to: result.assigned_to,
+                        assigned_at: result.assigned_at
+                    });
+                }
+            }
+        } catch (err) {
+            alert('Failed to assign ticket. Please try again.');
+            console.error('Error assigning ticket:', err);
+        }
+    };
+
+    const handleUnassign = async (messageId) => {
+        try {
+            const result = await api.unassignTicket(messageId);
+            if (result.success) {
+                // Update local state
+                const updatedTickets = tickets.map((t) => {
+                    if (t.id === messageId) {
+                        return { ...t, assigned_to: null, assigned_at: null };
+                    }
+                    return t;
+                });
+                setTickets(updatedTickets);
+
+                if (selectedTicket?.id === messageId) {
+                    setSelectedTicket({
+                        ...selectedTicket,
+                        assigned_to: null,
+                        assigned_at: null
+                    });
+                }
+            }
+        } catch (err) {
+            alert('Failed to unassign ticket. Please try again.');
+            console.error('Error unassigning ticket:', err);
+        }
+    };
+
     const togglePolling = () => {
         setIsPolling(!isPolling);
     };
@@ -351,6 +409,8 @@ const Dashboard = ({ agentName, onLogout }) => {
                     agentName={agentName}
                     onShowMetadata={() => setMetadataOpen(true)}
                     onClose={() => setSelectedTicket(null)}
+                    onAssign={handleAssign}
+                    onUnassign={handleUnassign}
                 />
 
                 <MetadataPanel ticket={selectedTicket} isOpen={metadataOpen} onClose={() => setMetadataOpen(false)} />
