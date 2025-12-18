@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Menu } from 'lucide-react';
+import { Menu, Wifi, WifiOff, Bell } from 'lucide-react';
 import TicketList from '../components/TicketList';
 import TicketDetail from '../components/TicketDetail';
 import MetadataPanel from '../components/MetadataPanel';
@@ -11,15 +11,84 @@ const Dashboard = ({ agentName, onLogout }) => {
     const [selectedTicket, setSelectedTicket] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('open');
-    const [sortBy, setSortBy] = useState('');
+    const [sortBy, setSortBy] = useState('urgency');
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [metadataOpen, setMetadataOpen] = useState(false);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
+    // Real-time polling state
+    const [isPolling, setIsPolling] = useState(true);
+    const [lastUpdate, setLastUpdate] = useState(new Date());
+    const [newMessagesCount, setNewMessagesCount] = useState(0);
+    const [isRefreshing, setIsRefreshing] = useState(false);
+
+    // Initial load
     useEffect(() => {
         loadTickets();
     }, [statusFilter, sortBy]);
+
+    // Real-time polling - Check for updates every 10 seconds
+    useEffect(() => {
+        if (!isPolling) return;
+
+        const POLL_INTERVAL = 10000; // 10 seconds
+
+        console.log('🔄 Polling started - checking every 10 seconds');
+
+        const pollInterval = setInterval(async () => {
+            console.log('🔍 Polling for new messages...');
+            setIsRefreshing(true); // Show refresh indicator
+            try {
+                const filters = {
+                    status: statusFilter,
+                    sort: sortBy,
+                };
+
+                const data = await api.getMessages(filters);
+                console.log(`✅ Poll complete - ${data.length} tickets fetched`);
+
+                // Check if there are new messages
+                const newMessages = data.filter(msg => {
+                    const msgTime = new Date(msg.timestamp);
+                    return msgTime > lastUpdate;
+                });
+
+                if (newMessages.length > 0) {
+                    console.log(`🆕 ${newMessages.length} new message(s) found!`);
+                    setNewMessagesCount(prev => prev + newMessages.length);
+
+                    // Show notification
+                    if ('Notification' in window && Notification.permission === 'granted') {
+                        new Notification('New Support Messages', {
+                            body: `${newMessages.length} new message(s) received`,
+                            icon: '/logo.png',
+                            tag: 'new-messages'
+                        });
+                    }
+                }
+
+                setTickets(data);
+                setLastUpdate(new Date());
+            } catch (err) {
+                console.error('❌ Polling error:', err);
+            } finally {
+                setIsRefreshing(false); // Hide refresh indicator
+            }
+        }, POLL_INTERVAL);
+
+        return () => {
+            console.log('🛑 Polling stopped');
+            clearInterval(pollInterval);
+        };
+    }, [isPolling, statusFilter, sortBy]); // Removed lastUpdate from dependencies
+
+    // Request notification permission on mount
+    useEffect(() => {
+        if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+    }, []);
 
     useEffect(() => {
         applySearchFilter();
@@ -37,6 +106,8 @@ const Dashboard = ({ agentName, onLogout }) => {
 
             const data = await api.getMessages(filters);
             setTickets(data);
+            setLastUpdate(new Date());
+            setNewMessagesCount(0); // Reset counter on manual load
         } catch (err) {
             setError('Failed to load tickets. Please try again.');
             console.error('Error loading tickets:', err);
@@ -98,6 +169,14 @@ const Dashboard = ({ agentName, onLogout }) => {
         }
     };
 
+    const togglePolling = () => {
+        setIsPolling(!isPolling);
+    };
+
+    const clearNewMessages = () => {
+        setNewMessagesCount(0);
+    };
+
     if (loading) {
         return (
             <div className="flex items-center justify-center h-screen bg-gradient-to-br from-[#4FCDFF] via-[#3bb8e6] to-[#2a9fd4]">
@@ -132,6 +211,46 @@ const Dashboard = ({ agentName, onLogout }) => {
                             <Menu className="w-5 h-5 text-gray-600" />
                         </button>
                         <h1 className="text-lg lg:text-xl font-semibold bg-gradient-to-r from-[#4FCDFF] to-[#2a9fd4] bg-clip-text text-transparent">Support Dashboard</h1>
+
+                        {/* Real-time Status Indicator */}
+                        <div className="hidden sm:flex items-center gap-2">
+                            <button
+                                onClick={togglePolling}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                                    isPolling
+                                        ? 'bg-green-50 text-green-700 border border-green-200 hover:bg-green-100'
+                                        : 'bg-gray-100 text-gray-600 border border-gray-300 hover:bg-gray-200'
+                                }`}
+                                title={isPolling ? 'Real-time updates ON' : 'Real-time updates OFF'}
+                            >
+                                {isPolling ? (
+                                    <>
+                                        <Wifi className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-pulse' : ''}`} />
+                                        <span>Live</span>
+                                        {isRefreshing && <span className="ml-1">•</span>}
+                                    </>
+                                ) : (
+                                    <>
+                                        <WifiOff className="w-3.5 h-3.5" />
+                                        <span>Paused</span>
+                                    </>
+                                )}
+                            </button>
+
+                            {/* New Messages Badge */}
+                            {newMessagesCount > 0 && (
+                                <button
+                                    onClick={() => {
+                                        clearNewMessages();
+                                        loadTickets();
+                                    }}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-50 text-orange-700 border border-orange-200 rounded-lg text-xs font-medium hover:bg-orange-100 transition-all animate-pulse"
+                                >
+                                    <Bell className="w-3.5 h-3.5" />
+                                    <span>{newMessagesCount} new</span>
+                                </button>
+                            )}
+                        </div>
                     </div>
 
                     <div className="flex items-center gap-2 lg:gap-4">
@@ -162,9 +281,9 @@ const Dashboard = ({ agentName, onLogout }) => {
                                 {agentName.charAt(0).toUpperCase()}
                             </div>
                             <span className="hidden sm:inline text-sm text-[#333333]">
-                <span className="hidden lg:inline">Agent: </span>
-                <span className="font-semibold">{agentName}</span>
-              </span>
+                                <span className="hidden lg:inline">Agent: </span>
+                                <span className="font-semibold">{agentName}</span>
+                            </span>
                             <button
                                 onClick={onLogout}
                                 className="ml-2 px-3 py-1.5 text-sm border border-gray-300 rounded-lg text-[#333333] hover:bg-gray-100 transition-colors"
@@ -176,26 +295,40 @@ const Dashboard = ({ agentName, onLogout }) => {
                     </div>
                 </div>
 
-                {/* Mobile Filters */}
-                <div className="md:hidden flex gap-2 mt-3">
-                    <select
-                        value={statusFilter}
-                        onChange={(e) => setStatusFilter(e.target.value)}
-                        className="flex-1 px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-[#4FCDFF] transition-all"
-                    >
-                        <option value="all">All</option>
-                        <option value="open">Open</option>
-                        <option value="resolved">Resolved</option>
-                    </select>
+                {/* Mobile Filters & Status */}
+                <div className="flex gap-2 mt-3">
+                    <div className="md:hidden flex gap-2 flex-1">
+                        <select
+                            value={statusFilter}
+                            onChange={(e) => setStatusFilter(e.target.value)}
+                            className="flex-1 px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-[#4FCDFF] transition-all"
+                        >
+                            <option value="all">All</option>
+                            <option value="open">Open</option>
+                            <option value="resolved">Resolved</option>
+                        </select>
 
-                    <select
-                        value={sortBy}
-                        onChange={(e) => setSortBy(e.target.value)}
-                        className="flex-1 px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-[#4FCDFF] transition-all"
+                        <select
+                            value={sortBy}
+                            onChange={(e) => setSortBy(e.target.value)}
+                            className="flex-1 px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-[#4FCDFF] transition-all"
+                        >
+                            <option value="time">By Time</option>
+                            <option value="urgency">By Urgency</option>
+                        </select>
+                    </div>
+
+                    {/* Mobile Real-time Status */}
+                    <button
+                        onClick={togglePolling}
+                        className={`sm:hidden px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                            isPolling
+                                ? 'bg-green-50 text-green-700 border border-green-200'
+                                : 'bg-gray-100 text-gray-600 border border-gray-300'
+                        }`}
                     >
-                        <option value="time">By Time</option>
-                        <option value="urgency">By Urgency</option>
-                    </select>
+                        {isPolling ? <Wifi className="w-4 h-4" /> : <WifiOff className="w-4 h-4" />}
+                    </button>
                 </div>
             </div>
 
@@ -217,6 +350,7 @@ const Dashboard = ({ agentName, onLogout }) => {
                     onResolve={handleResolve}
                     agentName={agentName}
                     onShowMetadata={() => setMetadataOpen(true)}
+                    onClose={() => setSelectedTicket(null)}
                 />
 
                 <MetadataPanel ticket={selectedTicket} isOpen={metadataOpen} onClose={() => setMetadataOpen(false)} />
