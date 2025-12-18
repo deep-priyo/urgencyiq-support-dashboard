@@ -14,7 +14,7 @@ const CustomerInfoModal = ({ customerId, onClose }) => {
         try {
             setLoading(true);
             setError(null);
-            const response = await fetch(`http://localhost:5000/api/customers/${customerId}`);
+            const response = await fetch(`https://branch-support-backend.onrender.com/api/customers/${customerId}`);
 
             if (!response.ok) {
                 throw new Error('Failed to fetch customer info');
