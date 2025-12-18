@@ -1,10 +1,12 @@
 import { useState } from 'react';
-import { Menu, MessageSquare } from 'lucide-react';
+import { Menu, MessageSquare, Info } from 'lucide-react';
 import CannedMessages from './CannedMessages';
+import CustomerInfoModal from './CustomerInfoModal';
 
 const TicketDetail = ({ ticket, onSendReply, onResolve, agentName, onShowMetadata }) => {
     const [replyText, setReplyText] = useState('');
     const [showCannedMessages, setShowCannedMessages] = useState(false);
+    const [showCustomerInfo, setShowCustomerInfo] = useState(false);
 
     if (!ticket) {
         return (
@@ -46,7 +48,18 @@ const TicketDetail = ({ ticket, onSendReply, onResolve, agentName, onShowMetadat
             {/* Ticket Header */}
             <div className="p-4 lg:p-6 border-b border-gray-200">
                 <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-xl lg:text-2xl font-semibold text-[#333333]">Customer #{ticket.customer_id}</h2>
+                    <div className="flex items-center gap-2">
+                        <h2 className="text-xl lg:text-2xl font-semibold text-[#333333]">
+                            Customer #{ticket.customer_id}
+                        </h2>
+                        <button
+                            onClick={() => setShowCustomerInfo(true)}
+                            className="p-2 hover:bg-blue-50 rounded-lg transition-colors group"
+                            title="View customer details"
+                        >
+                            <Info className="w-5 h-5 text-[#4FCDFF] group-hover:text-[#3bb8e6]" />
+                        </button>
+                    </div>
                     <button onClick={onShowMetadata} className="lg:hidden p-2 hover:bg-gray-100 rounded-lg">
                         <Menu className="w-5 h-5 text-gray-600" />
                     </button>
@@ -71,7 +84,15 @@ const TicketDetail = ({ ticket, onSendReply, onResolve, agentName, onShowMetadat
                         <div className="flex items-center mb-2">
                             <div className="w-8 h-8 rounded-full bg-[#6c757d] flex items-center justify-center text-white font-semibold text-sm mr-3">C</div>
                             <div>
-                                <p className="font-semibold text-sm text-[#333333]">Customer #{ticket.customer_id}</p>
+                                <div className="flex items-center gap-2">
+                                    <p className="font-semibold text-sm text-[#333333]">Customer #{ticket.customer_id}</p>
+                                    <button
+                                        onClick={() => setShowCustomerInfo(true)}
+                                        className="text-xs text-[#4FCDFF] hover:text-[#3bb8e6] hover:underline transition-colors"
+                                    >
+                                        View Profile
+                                    </button>
+                                </div>
                                 <p className="text-xs text-gray-500">{new Date(ticket.created_at).toLocaleString()}</p>
                             </div>
                         </div>
@@ -147,6 +168,14 @@ const TicketDetail = ({ ticket, onSendReply, onResolve, agentName, onShowMetadat
                 <CannedMessages
                     onSelectMessage={handleSelectCannedMessage}
                     onClose={() => setShowCannedMessages(false)}
+                />
+            )}
+
+            {/* Customer Info Modal */}
+            {showCustomerInfo && (
+                <CustomerInfoModal
+                    customerId={ticket.customer_id}
+                    onClose={() => setShowCustomerInfo(false)}
                 />
             )}
         </div>
