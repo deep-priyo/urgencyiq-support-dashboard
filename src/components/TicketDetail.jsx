@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { Menu, MessageSquare, Info, X } from 'lucide-react';
+import { Menu, MessageSquare, Info, X, UserCheck, UserX } from 'lucide-react';
 import CannedMessages from './CannedMessages';
 import CustomerInfoModal from './CustomerInfoModal';
 
-const TicketDetail = ({ ticket, onSendReply, onResolve, agentName, onShowMetadata, onClose }) => {
+const TicketDetail = ({ ticket, onSendReply, onResolve, agentName, onShowMetadata, onClose, onAssign, onUnassign }) => {
     const [replyText, setReplyText] = useState('');
     const [showCannedMessages, setShowCannedMessages] = useState(false);
     const [showCustomerInfo, setShowCustomerInfo] = useState(false);
@@ -33,6 +33,14 @@ const TicketDetail = ({ ticket, onSendReply, onResolve, agentName, onShowMetadat
         setShowCannedMessages(false);
     };
 
+    const handleAssign = () => {
+        onAssign(ticket.id, agentName);
+    };
+
+    const handleUnassign = () => {
+        onUnassign(ticket.id);
+    };
+
     const getUrgencyColor = (urgency) => {
         switch (urgency) {
             case 'critical': return 'text-red-600';
@@ -42,6 +50,9 @@ const TicketDetail = ({ ticket, onSendReply, onResolve, agentName, onShowMetadat
             default: return 'text-gray-600';
         }
     };
+
+    const isAssignedToMe = ticket.assigned_to === agentName;
+    const isAssignedToSomeone = ticket.assigned_to && !isAssignedToMe;
 
     return (
         <div className="flex-1 flex flex-col bg-white overflow-hidden">
@@ -73,17 +84,70 @@ const TicketDetail = ({ ticket, onSendReply, onResolve, agentName, onShowMetadat
                         </button>
                     </div>
                 </div>
-                <div className="flex flex-wrap items-center gap-2">
-          <span className={`px-3 py-1 rounded-lg text-sm font-medium ${getUrgencyColor(ticket.urgency)}`}>
-            {ticket.urgency.toUpperCase()}
-          </span>
+
+                <div className="flex flex-wrap items-center gap-2 mb-3">
+                    <span className={`px-3 py-1 rounded-lg text-sm font-medium ${getUrgencyColor(ticket.urgency)}`}>
+                        {ticket.urgency.toUpperCase()}
+                    </span>
                     <span className={`px-3 py-1 rounded-lg text-sm font-medium ${
                         ticket.status === 'open' ? 'bg-[#4FCDFF] text-white' : 'bg-gray-200 text-gray-700'
                     }`}>
-            {ticket.status.toUpperCase()}
-          </span>
+                        {ticket.status.toUpperCase()}
+                    </span>
+
+                    {/* Assignment Status Badge */}
+                    {ticket.assigned_to && (
+                        <span className="px-3 py-1 rounded-lg text-sm font-medium bg-purple-100 text-purple-700 flex items-center gap-1.5">
+                            <UserCheck className="w-4 h-4" />
+                            {ticket.assigned_to}
+                        </span>
+                    )}
                 </div>
-                <p className="text-sm text-gray-500 mt-2">Created: {new Date(ticket.created_at).toLocaleString()}</p>
+
+                {/* Assignment Buttons */}
+                {ticket.status === 'open' && (
+                    <div className="flex flex-wrap gap-2 mb-3">
+                        {!ticket.assigned_to && (
+                            <button
+                                onClick={handleAssign}
+                                className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-50 text-purple-700 border border-purple-200 rounded-lg text-sm font-medium hover:bg-purple-100 transition-all"
+                            >
+                                <UserCheck className="w-4 h-4" />
+                                Assign to Me
+                            </button>
+                        )}
+
+                        {isAssignedToMe && (
+                            <button
+                                onClick={handleUnassign}
+                                className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 text-gray-700 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-100 transition-all"
+                            >
+                                <UserX className="w-4 h-4" />
+                                Unassign from Me
+                            </button>
+                        )}
+
+                        {isAssignedToSomeone && (
+                            <div className="flex items-center gap-2">
+                                <span className="text-sm text-gray-600">
+                                    Assigned to {ticket.assigned_to}
+                                </span>
+                                <button
+                                    onClick={handleAssign}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-50 text-purple-700 border border-purple-200 rounded-lg text-sm font-medium hover:bg-purple-100 transition-all"
+                                >
+                                    <UserCheck className="w-4 h-4" />
+                                    Reassign to Me
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                <p className="text-sm text-gray-500">Created: {new Date(ticket.created_at).toLocaleString()}</p>
+                {ticket.assigned_at && (
+                    <p className="text-sm text-gray-500">Assigned: {new Date(ticket.assigned_at).toLocaleString()}</p>
+                )}
             </div>
 
             {/* Message Content */}
@@ -191,4 +255,4 @@ const TicketDetail = ({ ticket, onSendReply, onResolve, agentName, onShowMetadat
     );
 };
 
-export default TicketDetail;
+export default TicketDetail
