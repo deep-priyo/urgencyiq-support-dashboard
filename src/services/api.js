@@ -102,6 +102,28 @@ const unassignTicket = async (messageId) => {
     return response.json();
 };
 
+// GET /api/get/llm
+const getLLM = async () => {
+    const response = await fetch(`${BASE_URL}/api/get/llm`);
+    if (!response.ok) {
+        throw new Error(`Failed to get LLM state: ${response.status}`);
+    }
+    return response.json(); // { use_llm: boolean }
+};
+
+// POST /api/set/llm
+const setLLM = async (use_llm) => {
+    const response = await fetch(`${BASE_URL}/api/set/llm`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ use_llm }),
+    });
+    if (!response.ok) {
+        throw new Error(`Failed to set LLM state: ${response.status}`);
+    }
+    return response.json(); // { success: true }
+};
+
 // Export all functions as a single default object
 export default {
     getMessages,
@@ -109,4 +131,6 @@ export default {
     resolveTicket,
     assignTicket,
     unassignTicket,
+    getLLM,
+    setLLM,
 };
