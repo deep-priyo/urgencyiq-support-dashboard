@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Menu, Wifi, WifiOff, Bell } from 'lucide-react';
+import { Menu, Wifi, WifiOff, Bell, Brain } from 'lucide-react';
 import TicketList from '../components/TicketList';
 import TicketDetail from '../components/TicketDetail';
 import MetadataPanel from '../components/MetadataPanel';
@@ -22,6 +22,10 @@ const Dashboard = ({ agentName, onLogout }) => {
     const [lastUpdate, setLastUpdate] = useState(new Date());
     const [newMessagesCount, setNewMessagesCount] = useState(0);
     const [isRefreshing, setIsRefreshing] = useState(false);
+
+    // LLM toggle state
+    const [useLLM, setUseLLMState] = useState(false);
+    const [llmReady, setLlmReady] = useState(false);
 
     // Initial load
     useEffect(() => {
@@ -88,6 +92,23 @@ const Dashboard = ({ agentName, onLogout }) => {
         if ('Notification' in window && Notification.permission === 'default') {
             Notification.requestPermission();
         }
+    }, []);
+
+    // Load initial LLM toggle state
+    useEffect(() => {
+        const fetchLLMState = async () => {
+            try {
+                const res = await api.getLLM();
+                if (res && typeof res.use_llm === 'boolean') {
+                    setUseLLMState(res.use_llm);
+                }
+            } catch (e) {
+                console.error('Failed to get LLM state:', e);
+            } finally {
+                setLlmReady(true);
+            }
+        };
+        fetchLLMState();
     }, []);
 
     useEffect(() => {
@@ -235,6 +256,18 @@ const Dashboard = ({ agentName, onLogout }) => {
         setNewMessagesCount(0);
     };
 
+    const toggleLLM = async () => {
+        if (!llmReady) return;
+        const next = !useLLM;
+        try {
+            await api.setLLM(next);
+            setUseLLMState(next);
+        } catch (e) {
+            alert('Failed to update LLM setting. Please try again.');
+            console.error('Error setting LLM state:', e);
+        }
+    };
+
     if (loading) {
         return (
             <div
@@ -243,8 +276,8 @@ const Dashboard = ({ agentName, onLogout }) => {
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#4FCDFF] mx-auto mb-4"></div>
                     <p className="text-gray-600">Loading tickets...</p>
                     <p className="text-gray-500 text-sm mt-2">Note: This may take a few seconds as the server is on Render's free tier...</p>
-                            </div>
-                        </div>
+                </div>
+            </div>
         );
     }
 
@@ -295,6 +328,33 @@ const Dashboard = ({ agentName, onLogout }) => {
                                         <span>Paused</span>
                                     </>
                                 )}
+                            </button>
+
+                            {/* LLM Toggle */}
+                            <button
+                                onClick={toggleLLM}
+                                disabled={!llmReady}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
+                                    useLLM
+                                        ? 'bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100'
+                                        : 'bg-gray-100 text-gray-600 border-gray-300 hover:bg-gray-200'
+                                } ${!llmReady ? 'opacity-60 cursor-not-allowed' : ''}`}
+                                title={useLLM ? 'LLM Assistant ON' : 'LLM Assistant OFF'}
+                                aria-pressed={useLLM}
+                            >
+                                <Brain className="w-3.5 h-3.5" />
+                                <span>LLM</span>
+                                <span
+                                    className={`ml-1 inline-flex items-center w-8 h-4 rounded-full transition-colors duration-200 ${
+                                        useLLM ? 'bg-indigo-500/60' : 'bg-gray-300'
+                                    }`}
+                                >
+                                    <span
+                                        className={`h-3 w-3 bg-white rounded-full shadow transform transition-transform duration-200 ${
+                                            useLLM ? 'translate-x-4' : 'translate-x-0.5'
+                                        }`}
+                                    />
+                                </span>
                             </button>
 
                             {/* New Messages Badge */}
