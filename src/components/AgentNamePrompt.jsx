@@ -18,24 +18,14 @@ const AgentNamePrompt = ({ onSubmit }) => {
 
     return (
         <div
-            className="min-h-screen flex items-center justify-center p-4 relative bg-no-repeat"
+            className="min-h-[100svh] flex items-center justify-center p-4 relative bg-no-repeat bg-cover bg-center"
             style={{
                 backgroundImage:
-                    'url(https://d2c5ectx2y1vm9.cloudfront.net/assets/index_local/index_local_hero.en_IN-5f305f0dd4cd806ca235e8acc50ab73435cc235996513300052facf485b1437f.png)',
-                backgroundSize: '135%',     // 👈 zoom level (120%, 140%, etc.)
-                backgroundPosition: '20% 15%'
-
+                    'url(https://images.unsplash.com/vector-1762815716701-10861053923a?q=80&w=1431&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D)'
             }}
         >
 
-        <div className="absolute top-4 left-4">
-                <img
-                    src="https://d2c5ectx2y1vm9.cloudfront.net/assets/logo-485b81d3b9c7d0948100d5af0c6add2a27271ae40c65cdb6e98be5907ceaee32.png"
-                    alt="Branch"
-                    style={{ height: '2.8rem', filter: 'brightness(0)' }}
-                    className="transition-all"
-                />
-            </div>
+
 
             <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full">
                 <div className="text-center mb-6">
