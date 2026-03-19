@@ -44,6 +44,11 @@ It integrates directly with the **UrgencyIQ Support API backend**, which perform
 - Live refresh status indicator
 - Visual counter for unread messages
 
+### LLM Assistant Control (New)
+- Toggle the LLM assistant on/off directly from the dashboard header
+- State auto-loads on page open and persists via the backend API
+- No code changes required in the backend to switch modes
+
 ### Customer Insights
 Detailed customer profile modal including:
 
@@ -175,6 +180,8 @@ Expected endpoints include:
 | `/api/messages/:id/assign` | POST | Assign ticket |
 | `/api/messages/:id/unassign` | POST | Remove assignment |
 | `/api/customers/:id` | GET | Customer profile data |
+| `/api/get/llm` | GET | Read current LLM usage flag (`{ use_llm: boolean }`) |
+| `/api/set/llm` | POST | Update LLM usage flag with body `{ use_llm: boolean }` |
 
 ---
 
@@ -203,6 +210,19 @@ npm run build
 npm run preview
 npm run lint
 ```
+
+---
+
+## LLM Assistant Toggle — How It Works
+
+You can control whether the system leverages the LLM for enhanced assistance without touching any backend code:
+
+1. Open the dashboard. In the top header, next to the Wi‑Fi Live/Pause button, there is an `LLM` pill with a brain icon.
+2. The toggle automatically initializes to the current server setting by calling `GET /api/get/llm`.
+3. Clicking the toggle updates the setting by calling `POST /api/set/llm` with `{ use_llm: true | false }`.
+4. The button is temporarily disabled until the initial state is fetched to prevent accidental flips.
+
+This workflow makes it easy to switch between LLM-assisted and non‑LLM modes at runtime—no redeploys or manual edits required.
 
 ---
 
