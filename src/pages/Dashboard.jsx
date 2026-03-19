@@ -237,12 +237,14 @@ const Dashboard = ({ agentName, onLogout }) => {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center h-screen bg-gradient-to-br from-[#4FCDFF] via-[#3bb8e6] to-[#2a9fd4]">
+            <div
+                className="flex items-center justify-center h-screen bg-gradient-to-br from-[#4FCDFF] via-[#3bb8e6] to-[#2a9fd4]">
                 <div className="text-center bg-white rounded-2xl shadow-2xl p-8">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#4FCDFF] mx-auto mb-4"></div>
                     <p className="text-gray-600">Loading tickets...</p>
-                </div>
-            </div>
+                    <p className="text-gray-500 text-sm mt-2">Note: This may take a few seconds as the server is on Render's free tier...</p>
+                            </div>
+                        </div>
         );
     }
 
